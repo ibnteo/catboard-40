@@ -1,7 +1,7 @@
 /*
    Keyboard CatBoard-40 (for CatBoard-2)
-   Version: 0.12
-   Date: 2020-06-05
+   Version: 0.13
+   Date: 2020-06-06
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
    Controller: ProMicro (Arduino Leonardo)
@@ -193,33 +193,34 @@ void release(byte keyNum) {
   if (modLay) layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
   byte keyCode = pgm_read_byte(&layers[layer1][keyNum - 1]);
   if (modLast) {
-    if (modLast == KEY_NAV) {
+    if (modLast == KEY_NAV && keyCode == KEY_NAV) {
       Keyboard.releaseAll();
       Keyboard.press(KEY_LEFT_SHIFT);
       Keyboard.write(KEY_LEFT_ARROW);
       Keyboard.releaseAll();
       modifiers = 0;
-    } else if (modLast == KEY_LEFT_SHIFT && modLay == KEY_NAV) {
+    } else if (modLast == KEY_LEFT_SHIFT && keyCode == KEY_LEFT_SHIFT && modLay == KEY_NAV) {
       change_layout(1);
-    } else if (modLast == KEY_LEFT_CTRL && modLay == KEY_NAV) {
+    } else if (modLast == KEY_LEFT_CTRL && keyCode == KEY_LEFT_CTRL && modLay == KEY_NAV) {
       change_layout(0);
-    } else if (modLast == KEY_LEFT_CTRL) {
+    } else if (modLast == KEY_LEFT_CTRL && keyCode == KEY_LEFT_CTRL) {
       Keyboard.releaseAll();
       Keyboard.write(KEY_DELETE);
       modifiers = 0;
-    } else if (modLast == KEY_LEFT_ALT) {
+    } else if (modLast == KEY_LEFT_ALT && keyCode == KEY_LEFT_ALT) {
+      Keyboard.releaseAll();
       Keyboard.write(KEY_RETURN);
-    } else if (modLast == KEY_RIGHT_ALT) {
+    } else if (modLast == KEY_RIGHT_ALT && keyCode == KEY_RIGHT_ALT) {
       Keyboard.releaseAll();
       Keyboard.press(KEY_LEFT_CTRL);
       Keyboard.write(KEY_BACKSPACE);
       Keyboard.releaseAll();
       modifiers = 0;
-    } else if (modLast == KEY_LEFT_SHIFT) {
+    } else if (modLast == KEY_LEFT_SHIFT && keyCode == KEY_LEFT_SHIFT) {
       Keyboard.write(' ');
     }
-    modLast = 0;
   }
+  modLast = 0;
   if (keyCode >= KEY_MODS && keyCode <= KEY_RIGHT_GUI) {
     if (keyCode == KEY_LEFT_ALT && (modifiers & (1 << (KEY_LEFT_GUI - KEY_MODS)))) {
       keyCode = KEY_LEFT_GUI;
@@ -236,6 +237,7 @@ void release(byte keyNum) {
     modLay = KEY_NAV;
   } else if (keyCode >= KEY_LAY1) {
     Keyboard.releaseAll();
+    modLay = 0;
   } else {
     Keyboard.release(keyCode);
   }
