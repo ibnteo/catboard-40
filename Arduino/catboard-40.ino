@@ -1,6 +1,6 @@
 /*
    Keyboard CatBoard-40 (for CatBoard-2)
-   Version: 0.22
+   Version: 0.23
    Date: 2020-06-09
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
@@ -90,15 +90,16 @@ Keypad keypad[KEYPADS] = {
 #define KEY_LEFT_GUI  0x80
 #endif
 
-#define KEY_ESC2 247
-#define KEY_LAY1 248
-#define KEY_LAY2 249
-#define KEY_NAV  250
-#define KEY_NUM  251
-#define KEY_SYM  252
-#define KEY_TYPO 253
-#define KEY_CMOD 254
-#define KEY_CMOD2 255
+#define KEY_ESC2  246
+#define KEY_LAY1  247
+#define KEY_LAY2  248
+#define KEY_NAV   249
+#define KEY_NUM   250
+#define KEY_SYM   251
+#define KEY_TYPO  252
+#define KEY_CMOD  253
+#define KEY_CMOD2 254
+#define KEY_ATAB  255
 
 #define LAYERS 4
 #define LAYOUTS 2
@@ -131,8 +132,8 @@ const char layers[LAYERS][KEYS] PROGMEM = {
   }
 };
 
-const char syms[KEYS][2] PROGMEM = {
-  {'?', '&'}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'}, {'\'', 0}, {'"', '@'}, {'{', 0}, {'}', 0}, {0, 0}, {0, 0},
+const char syms[KEYS][LAYOUTS] PROGMEM = {
+  {'?', '&'}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'}, {'\'', 0}, {'"', '@'}, {'{', 0}, {'}', 0}, {0, 0}, {0, '#'},
   {'~', 0}, {'^', 0}, {'&', 0}, {'*', '*'}, {'(', '('}, {')', ')'}, {';', '$'}, {':', '^'}, {'[', 0}, {']', 0}, {KEY_SYM, KEY_SYM}, {'`', 0},
   {'\\', 0}, {'/', '|'}, {'=', '='}, {'_', '_'}, {'|', 0}, {',', '?'}, {'.', '/'}, {'<', 0}, {'>', 0}, {0, 0},
   {0, 0}, {0, 0}, {0, 0}, {0, 0}, {KEY_NAV, KEY_NAV}, {0, 0}
@@ -229,56 +230,52 @@ void press(byte keyNum) {
     if (modLay == KEY_CMOD) {
       bool ctrl = false;
       bool shift = false;
-      if (keyCode == KEY_HOME || keyCode == KEY_END || keyCode == KEY_RETURN || keyCode == KEY_BACKSPACE || keyCode == KEY_DELETE) {
+      /*if (keyCode == KEY_HOME || keyCode == KEY_END || keyCode == KEY_RETURN || keyCode == KEY_BACKSPACE || keyCode == KEY_DELETE) {
         ctrl = true;
-      }
-      else if (keyCode == KEY_LEFT_ARROW) {
+      } else if (keyCode == KEY_LEFT_ARROW) {
         keyCode = KEY_HOME;
-      }
-      else if (keyCode == KEY_RIGHT_ARROW) {
+      } else if (keyCode == KEY_RIGHT_ARROW) {
         keyCode = KEY_END;
-      }
-      else if (keyCode == KEY_UP_ARROW) {
+      } else*/
+      if (keyCode == KEY_UP_ARROW) {
         keyCode = KEY_PAGE_UP;
-      }
-      else if (keyCode == KEY_DOWN_ARROW) {
+      } else if (keyCode == KEY_DOWN_ARROW) {
         keyCode = KEY_PAGE_DOWN;
-      }
-      else if (keyCode == KEY_INSERT) {
+      } else if (keyCode == KEY_INSERT) {
         ctrl = true;
-      }
-      else if (keyCode == KEY_APPLICATION) {
+      } else if (keyCode == KEY_APPLICATION) {
         keyCode = KEY_INSERT;
         shift = true;
+      } else {
+        ctrl = true;
       }
       if (ctrl) Keyboard.press(KEY_LEFT_CTRL);
       if (shift) Keyboard.press(KEY_LEFT_SHIFT);
       Keyboard.write(keyCode);
       if (ctrl && ! (modifiers & CTRL)) Keyboard.release(KEY_LEFT_CTRL);
       if (shift && ! (modifiers & SHIFT)) Keyboard.release(KEY_LEFT_SHIFT);
-    } else if (modLay == KEY_CMOD2) {
+    } else if (modLay == KEY_CMOD2 || modLay == KEY_ATAB) {
       bool alt = false;
       bool ctrl = false;
       if (keyCode == KEY_RETURN || keyCode == KEY_BACKSPACE || keyCode == KEY_DELETE) {
         alt = true;
-      }
-      else if (keyCode == KEY_UP_ARROW) {
+      } else if (keyCode == KEY_UP_ARROW) {
         ctrl = true;
         keyCode = KEY_PAGE_UP;
-      }
-      else if (keyCode == KEY_DOWN_ARROW) {
+      } else if (keyCode == KEY_DOWN_ARROW) {
         ctrl = true;
         keyCode = KEY_PAGE_DOWN;
-      }
-      else if (keyCode == KEY_LEFT_ARROW || keyCode == KEY_RIGHT_ARROW) {
-        // TODO: Alt+Tab
-      }
-      else if (keyCode == KEY_HOME) {
+      } else if (keyCode == KEY_LEFT_ARROW || keyCode == KEY_RIGHT_ARROW) {
+        if (modLay != KEY_ATAB) {
+          Keyboard.press(KEY_LEFT_ALT);
+          keyCode = KEY_TAB;
+          modLay = KEY_ATAB;
+        }
+      } else if (keyCode == KEY_HOME) {
         ctrl = true;
         alt = true;
         keyCode = KEY_LEFT_ARROW;
-      }
-      else if (keyCode == KEY_END) {
+      } else if (keyCode == KEY_END) {
         ctrl = true;
         alt = true;
         keyCode = KEY_RIGHT_ARROW;
@@ -335,6 +332,9 @@ void release(byte keyNum) {
   } else if (keyCode == KEY_TYPO) {
     modLay = KEY_NAV;
   } else if (keyCode == KEY_CMOD || keyCode == KEY_CMOD2) {
+    if (modLay == KEY_ATAB) {
+      Keyboard.release(KEY_LEFT_ALT);
+    }
     modLay = KEY_NAV;
   } else if (keyCode >= KEY_LAY1) {
     Keyboard.releaseAll();
