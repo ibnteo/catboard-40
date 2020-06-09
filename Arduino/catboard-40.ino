@@ -86,11 +86,14 @@ Keypad keypad[KEYPADS] = {
 #endif
 
 
-#define KEY_ESC2 251
-#define KEY_LAY1 252
-#define KEY_LAY2 253
-#define KEY_NAV  254
-#define KEY_NUM  255
+#define KEY_ESC2 248
+#define KEY_LAY1 249
+#define KEY_LAY2 250
+#define KEY_NAV  251
+#define KEY_NUM  252
+#define KEY_SYM  253
+#define KEY_TYPO 254
+#define KEY_CMOD 255
 
 #define LAYERS 4
 #define LAYOUTS 2
@@ -110,9 +113,9 @@ const char layers[LAYERS][KEYS] PROGMEM = {
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT, ' ', KEY_NAV, KEY_RIGHT_ALT
   },
   { // Nav
-    KEY_ESC, '1', '2', '3', '4', '5', 0, KEY_HOME, KEY_UP_ARROW, KEY_END, KEY_PAGE_UP, KEY_ESC2,
-    KEY_TAB, '0', '9', '8', '7', '6', KEY_RETURN, KEY_LEFT_ARROW, KEY_DOWN_ARROW, KEY_RIGHT_ARROW, KEY_PAGE_DOWN, KEY_NUM,
-    '|', '=', '+', '-', '_', KEY_BACKSPACE, KEY_DELETE, KEY_INSERT, KEY_APPLICATION, '\\',
+    KEY_ESC, '1', '2', '3', '4', '5', 0, KEY_HOME, KEY_UP_ARROW, KEY_END, KEY_TYPO, KEY_ESC2,
+    KEY_TAB, '0', '9', '8', '7', '6', KEY_RETURN, KEY_LEFT_ARROW, KEY_DOWN_ARROW, KEY_RIGHT_ARROW, KEY_CMOD, KEY_NUM,
+    KEY_LEFT_GUI, '/', '=', '-', '.', KEY_BACKSPACE, KEY_DELETE, KEY_INSERT, KEY_APPLICATION, KEY_SYM,
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT, ' ', KEY_NAV, KEY_RIGHT_ALT
   },
   { // Num
@@ -120,7 +123,14 @@ const char layers[LAYERS][KEYS] PROGMEM = {
     KEY_CAPS_LOCK, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_PRINTSCREEN, KEYPAD_ENTER, KEYPAD_4, KEYPAD_5, KEYPAD_6, KEYPAD_PLUS, KEYPAD_ASTERIX,
     KEY_F9, KEY_F10, KEY_F11, KEY_F12, KEY_PAUSE, KEYPAD_0, KEYPAD_1, KEYPAD_2, KEYPAD_3, KEYPAD_PERIOD,
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT, ' ', KEY_NAV, KEY_RIGHT_ALT
-  },
+  }
+};
+
+const char syms[KEYS][2] PROGMEM = {
+  {'?', '&'}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'}, {0, 0}, {0, 0}, {'{', 0}, {'}', 0}, {0, 0}, {0, 0},
+  {'~', 0}, {')', ')'}, {'(', '('}, {'*', '*'}, {'&', 0}, {'^', 0}, {0, 0}, {0, 0}, {'[', 0}, {']', 0}, {KEY_SYM, KEY_SYM}, {'`', 0},
+  {'|', 0}, {'/', '|'}, {'=', '='}, {'_', '_'}, {'\\'}, {',', '?'}, {'.', '/'}, {'<', 0}, {'>', 0}, {0, 0},
+  {0, 0}, {0, 0}, {0, 0}, {0, 0}, {KEY_NAV, KEY_NAV}, {0, 0}
 };
 
 byte modifiers = 0;
@@ -149,8 +159,31 @@ void change_layout(byte lay) {
 
 void press(byte keyNum) {
   byte layer1 = layer ;
-  if (modLay) layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
-  byte keyCode = pgm_read_byte(&layers[layer1][keyNum - 1]);
+  if (modLay == KEY_TYPO) {
+    layer1 = LAYOUTS;
+  } else if (modLay == KEY_CMOD) {
+    layer1 = LAYOUTS;
+  } else if (modLay) {
+    layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
+  }
+  byte keyCode = 0;
+  if (modLay == KEY_SYM) {
+    keyCode = pgm_read_byte(&syms[keyNum - 1][layer]);
+    if (! keyCode) {
+      keyCode = pgm_read_byte(&syms[keyNum - 1][1 - layer]);
+      if (keyCode) {
+        change_layout(1 - layer);
+        Keyboard.write(keyCode);
+        change_layout(1 - layer);
+      }
+    } else {
+      Keyboard.write(keyCode);
+    }
+    modLast = 0;
+    return;
+  } else {
+    keyCode = pgm_read_byte(&layers[layer1][keyNum - 1]);
+  }
   modLast = 0;
   if (keyCode >= KEY_MODS && keyCode <= KEY_RIGHT_GUI) {
     if (keyCode == KEY_LEFT_ALT && (modifiers & (1 << (KEY_RIGHT_ALT - KEY_MODS)))) {
@@ -184,13 +217,40 @@ void press(byte keyNum) {
     keyCode = pgm_read_byte(&layers[MOD_LAYER][keyNum - 1]);
     if (keyCode) Keyboard.write(keyCode);
   } else {
-    Keyboard.press(keyCode);
+    if (modLay == KEY_CMOD) {
+      bool ctrl = false;
+      if (keyCode == KEY_HOME) {ctrl = true;}
+      else if (keyCode == KEY_END) {ctrl = true;}
+      else if (keyCode == KEY_LEFT_ARROW) {keyCode = KEY_HOME;}
+      else if (keyCode == KEY_RIGHT_ARROW) {keyCode = KEY_END;}
+      else if (keyCode == KEY_UP_ARROW) {keyCode = KEY_PAGE_UP;}
+      else if (keyCode == KEY_DOWN_ARROW) {keyCode = KEY_PAGE_DOWN;}
+      if (ctrl) Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.write(keyCode);
+      if (ctrl && ! (modifiers & (1 << (KEY_LEFT_CTRL - KEY_MODS)))) Keyboard.release(KEY_LEFT_CTRL);
+    } else {
+      if (keyCode == KEY_HOME) {
+        Keyboard.press(KEY_LEFT_CTRL);
+        Keyboard.write(KEY_LEFT_ARROW);
+        if (! (modifiers & (1 << (KEY_LEFT_CTRL - KEY_MODS)))) Keyboard.release(KEY_LEFT_CTRL);
+      } else if (keyCode == KEY_END) {
+        Keyboard.press(KEY_LEFT_CTRL);
+        Keyboard.write(KEY_RIGHT_ARROW);
+        if (! (modifiers & (1 << (KEY_LEFT_CTRL - KEY_MODS)))) Keyboard.release(KEY_LEFT_CTRL);
+      } else {
+        Keyboard.press(keyCode);
+      }
+    }
   }
 }
 
 void release(byte keyNum) {
   byte layer1 = layer;
-  if (modLay) layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
+  if (modLay == KEY_SYM || modLay == KEY_CMOD || modLay == KEY_TYPO) {
+    layer1 = LAYOUTS;
+  } else if (modLay) {
+    layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
+  }
   byte keyCode = pgm_read_byte(&layers[layer1][keyNum - 1]);
   if (modLast) {
     if (modLast == KEY_NAV && keyCode == KEY_NAV) {
@@ -207,6 +267,10 @@ void release(byte keyNum) {
       Keyboard.releaseAll();
       Keyboard.write(KEY_DELETE);
       modifiers = 0;
+    } else if (modLast == KEY_TYPO && keyCode == KEY_TYPO) {
+      Keyboard.write(KEY_PAGE_UP);
+    } else if (modLast == KEY_CMOD && keyCode == KEY_CMOD) {
+      Keyboard.write(KEY_PAGE_DOWN);
     } else if (modLast == KEY_LEFT_ALT && keyCode == KEY_LEFT_ALT) {
       Keyboard.releaseAll();
       Keyboard.write(KEY_RETURN);
@@ -229,15 +293,22 @@ void release(byte keyNum) {
     }
     modifiers &= ~ (1 << (keyCode - KEY_MODS));
     Keyboard.release(keyCode);
+  } else if (keyCode == KEY_SYM) {
+    modLay = KEY_NAV;
   } else if (keyCode == KEY_NAV) {
     Keyboard.releaseAll();
     modRecover();
     modLay = 0;
   } else if (keyCode == KEY_NUM) {
     modLay = KEY_NAV;
+  } else if (keyCode == KEY_TYPO) {
+    modLay = KEY_NAV;
+  } else if (keyCode == KEY_CMOD) {
+    modLay = KEY_NAV;
   } else if (keyCode >= KEY_LAY1) {
     Keyboard.releaseAll();
     modLay = 0;
+  } else if (modLay == KEY_SYM) {
   } else {
     Keyboard.release(keyCode);
   }
