@@ -1,6 +1,6 @@
 /*
    Keyboard CatBoard-40 (for CatBoard-2)
-   Version: 0.21
+   Version: 0.22
    Date: 2020-06-09
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
@@ -75,25 +75,30 @@ Keypad keypad[KEYPADS] = {
 #define KEY_APPLICATION 0xED
 #define LED_LAYER LED_BUILTIN_RX
 #define KEY_MODS 0x80
+#define CTRL  (1 << (KEY_LEFT_CTRL - KEY_MODS))
+#define LALT  (1 << (KEY_LEFT_ALT - KEY_MODS))
+#define RALT  (1 << (KEY_RIGHT_ALT - KEY_MODS))
+#define SHIFT (1 << (KEY_LEFT_SHIFT - KEY_MODS))
+#define WIN   (1 << (KEY_LEFT_GUI - KEY_MODS))
 
 #define LINUX   0
 #define WINDOWS 1
 #define MACOS   2
 #define OS LINUX
 #if OS == MACOS
-    #define KEY_LEFT_CTRL 0x83
-    #define KEY_LEFT_GUI  0x80
+#define KEY_LEFT_CTRL 0x83
+#define KEY_LEFT_GUI  0x80
 #endif
 
-
-#define KEY_ESC2 248
-#define KEY_LAY1 249
-#define KEY_LAY2 250
-#define KEY_NAV  251
-#define KEY_NUM  252
-#define KEY_SYM  253
-#define KEY_TYPO 254
-#define KEY_CMOD 255
+#define KEY_ESC2 247
+#define KEY_LAY1 248
+#define KEY_LAY2 249
+#define KEY_NAV  250
+#define KEY_NUM  251
+#define KEY_SYM  252
+#define KEY_TYPO 253
+#define KEY_CMOD 254
+#define KEY_CMOD2 255
 
 #define LAYERS 4
 #define LAYOUTS 2
@@ -101,7 +106,7 @@ Keypad keypad[KEYPADS] = {
 byte layer = 0;
 const char layers[LAYERS][KEYS] PROGMEM = {
   { // JCUKEN layer
-    '[', 'j', 'c', 'u', 'k', 'e','n', 'g', 'h', 'v', 'z', ']',
+    '[', 'j', 'c', 'u', 'k', 'e', 'n', 'g', 'h', 'v', 'z', ']',
     '`', 'f', 'y', 'w', 'a', 'p', 'r', 'o', 'l', 'd', ';', '\'',
     'q', '/', 's', 'm', 'i', 't', 'x', 'b', ',', '.',
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT, ' ', KEY_NAV, KEY_RIGHT_ALT
@@ -114,22 +119,22 @@ const char layers[LAYERS][KEYS] PROGMEM = {
   },
   { // Nav
     KEY_ESC, '1', '2', '3', '4', '5', 0, KEY_HOME, KEY_UP_ARROW, KEY_END, KEY_TYPO, KEY_ESC2,
-    KEY_TAB, '0', '9', '8', '7', '6', KEY_RETURN, KEY_LEFT_ARROW, KEY_DOWN_ARROW, KEY_RIGHT_ARROW, KEY_CMOD, KEY_NUM,
-    KEY_LEFT_GUI, '\\', '+', '-', '.', KEY_BACKSPACE, KEY_DELETE, KEY_INSERT, KEY_APPLICATION, KEY_SYM,
+    KEY_TAB, '6', '7', '8', '9', '0', KEY_RETURN, KEY_LEFT_ARROW, KEY_DOWN_ARROW, KEY_RIGHT_ARROW, KEY_SYM, KEY_NUM,
+    KEY_CMOD, KEY_CMOD2, '+', '-', ' ', KEY_BACKSPACE, KEY_DELETE, KEY_INSERT, KEY_APPLICATION, KEY_LEFT_GUI,
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT, ' ', KEY_NAV, KEY_RIGHT_ALT
   },
   { // Num
-    0, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_SCROLL_LOCK, KEY_NUM_LOCK, KEYPAD_7, KEYPAD_8, KEYPAD_9, KEYPAD_MINUS, KEYPAD_SLASH,
-    KEY_CAPS_LOCK, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_PRINTSCREEN, KEYPAD_ENTER, KEYPAD_4, KEYPAD_5, KEYPAD_6, KEYPAD_PLUS, KEYPAD_ASTERIX,
-    KEY_F9, KEY_F10, KEY_F11, KEY_F12, KEY_PAUSE, KEYPAD_0, KEYPAD_1, KEYPAD_2, KEYPAD_3, KEYPAD_PERIOD,
+    0, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_NUM_LOCK, KEYPAD_7, KEYPAD_8, KEYPAD_9, KEYPAD_MINUS, KEYPAD_SLASH,
+    KEY_CAPS_LOCK, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEYPAD_ENTER, KEYPAD_4, KEYPAD_5, KEYPAD_6, KEYPAD_PLUS, KEYPAD_ASTERIX,
+    KEY_SCROLL_LOCK, KEY_PAUSE, KEY_PRINTSCREEN, KEY_F11, KEY_F12, KEYPAD_0, KEYPAD_1, KEYPAD_2, KEYPAD_3, KEYPAD_PERIOD,
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT, ' ', KEY_NAV, KEY_RIGHT_ALT
   }
 };
 
 const char syms[KEYS][2] PROGMEM = {
-  {'?', '&'}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'}, {0, 0}, {0, 0}, {'{', 0}, {'}', 0}, {0, 0}, {0, 0},
-  {'~', 0}, {')', ')'}, {'(', '('}, {'*', '*'}, {'&', 0}, {'^', 0}, {0, 0}, {0, 0}, {'[', 0}, {']', 0}, {KEY_SYM, KEY_SYM}, {'`', 0},
-  {'|', 0}, {'/', '|'}, {'=', '='}, {'_', '_'}, {'\\'}, {',', '?'}, {'.', '/'}, {'<', 0}, {'>', 0}, {0, 0},
+  {'?', '&'}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'}, {'\'', 0}, {'"', '@'}, {'{', 0}, {'}', 0}, {0, 0}, {0, 0},
+  {'~', 0}, {'^', 0}, {'&', 0}, {'*', '*'}, {'(', '('}, {')', ')'}, {';', '$'}, {':', '^'}, {'[', 0}, {']', 0}, {KEY_SYM, KEY_SYM}, {'`', 0},
+  {'\\', 0}, {'/', '|'}, {'=', '='}, {'_', '_'}, {'|', 0}, {',', '?'}, {'.', '/'}, {'<', 0}, {'>', 0}, {0, 0},
   {0, 0}, {0, 0}, {0, 0}, {0, 0}, {KEY_NAV, KEY_NAV}, {0, 0}
 };
 
@@ -157,43 +162,47 @@ void change_layout(byte lay) {
   digitalWrite(LED_LAYER, layer == 0 ? HIGH : LOW); // LOW = light
 }
 
+void modRecover() {
+  for (byte i = 0; i < 8; i++) {
+    if (modifiers & (1 << i)) {
+      Keyboard.press(KEY_MODS + i);
+    }
+  }
+}
+
 void press(byte keyNum) {
   byte layer1 = layer ;
-  if (modLay == KEY_TYPO) {
-    layer1 = LAYOUTS;
-  } else if (modLay == KEY_CMOD) {
+  if (modLay >= KEY_SYM) {
     layer1 = LAYOUTS;
   } else if (modLay) {
     layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
   }
   byte keyCode = 0;
   if (modLay == KEY_SYM) {
-    keyCode = pgm_read_byte(&syms[keyNum - 1][layer]);
-    if (! keyCode) {
-      keyCode = pgm_read_byte(&syms[keyNum - 1][1 - layer]);
-      if (keyCode) {
+    byte keyCode2 = pgm_read_byte(&syms[keyNum - 1][layer]);
+    if (! keyCode2) {
+      keyCode2 = pgm_read_byte(&syms[keyNum - 1][1 - layer]);
+      if (keyCode2) {
         change_layout(1 - layer);
-        Keyboard.write(keyCode);
+        Keyboard.write(keyCode2);
         change_layout(1 - layer);
       }
     } else {
-      Keyboard.write(keyCode);
+      Keyboard.write(keyCode2);
     }
-    modLast = 0;
-    return;
   } else {
     keyCode = pgm_read_byte(&layers[layer1][keyNum - 1]);
   }
   modLast = 0;
   if (keyCode >= KEY_MODS && keyCode <= KEY_RIGHT_GUI) {
-    if (keyCode == KEY_LEFT_ALT && (modifiers & (1 << (KEY_RIGHT_ALT - KEY_MODS)))) {
+    if (keyCode == KEY_LEFT_ALT && (modifiers & RALT)) {
       keyCode = KEY_LEFT_GUI;
       Keyboard.release(KEY_RIGHT_ALT);
-      modifiers &= ~ (1 << (KEY_RIGHT_ALT - KEY_MODS));
-    } else if (keyCode == KEY_RIGHT_ALT && (modifiers & (1 << (KEY_LEFT_ALT - KEY_MODS)))) {
+      modifiers &= ~ RALT;
+    } else if (keyCode == KEY_RIGHT_ALT && (modifiers & LALT)) {
       keyCode = KEY_LEFT_GUI;
       Keyboard.release(KEY_LEFT_ALT);
-      modifiers &= ~ (1 << (KEY_LEFT_ALT - KEY_MODS));
+      modifiers &= ~ LALT;
     }
     modifiers |= (1 << (keyCode - KEY_MODS));
     Keyboard.press(keyCode);
@@ -205,7 +214,7 @@ void press(byte keyNum) {
     modLay = keyCode;
   } else if (keyCode >= KEY_LAY1) {
     change_layout(keyCode - KEY_LAY1);
-  } else if (keyNum == 13 && (modifiers & (1 << (KEY_LEFT_ALT - KEY_MODS)))) {
+  } else if (keyNum == 13 && (modifiers & LALT)) {
     Keyboard.write(KEY_TAB);
   } else if (keyCode == KEY_ESC2) {
     Keyboard.write(KEY_ESC);
@@ -216,31 +225,82 @@ void press(byte keyNum) {
   } else if (layer1 < LAYOUTS && (modifiers & 0b11011101)) {
     keyCode = pgm_read_byte(&layers[MOD_LAYER][keyNum - 1]);
     if (keyCode) Keyboard.write(keyCode);
-  } else {
+  } else if (keyCode) {
     if (modLay == KEY_CMOD) {
       bool ctrl = false;
       bool shift = false;
-      if (keyCode == KEY_HOME || keyCode == KEY_END || keyCode == KEY_RETURN || keyCode == KEY_BACKSPACE || keyCode == KEY_DELETE) {ctrl = true;}
-      else if (keyCode == KEY_LEFT_ARROW) {keyCode = KEY_HOME;}
-      else if (keyCode == KEY_RIGHT_ARROW) {keyCode = KEY_END;}
-      else if (keyCode == KEY_UP_ARROW) {keyCode = KEY_PAGE_UP;}
-      else if (keyCode == KEY_DOWN_ARROW) {keyCode = KEY_PAGE_DOWN;}
-      else if (keyCode == KEY_INSERT) {ctrl = true;}
-      else if (keyCode == KEY_APPLICATION) {keyCode = KEY_INSERT; shift = true;}
+      if (keyCode == KEY_HOME || keyCode == KEY_END || keyCode == KEY_RETURN || keyCode == KEY_BACKSPACE || keyCode == KEY_DELETE) {
+        ctrl = true;
+      }
+      else if (keyCode == KEY_LEFT_ARROW) {
+        keyCode = KEY_HOME;
+      }
+      else if (keyCode == KEY_RIGHT_ARROW) {
+        keyCode = KEY_END;
+      }
+      else if (keyCode == KEY_UP_ARROW) {
+        keyCode = KEY_PAGE_UP;
+      }
+      else if (keyCode == KEY_DOWN_ARROW) {
+        keyCode = KEY_PAGE_DOWN;
+      }
+      else if (keyCode == KEY_INSERT) {
+        ctrl = true;
+      }
+      else if (keyCode == KEY_APPLICATION) {
+        keyCode = KEY_INSERT;
+        shift = true;
+      }
       if (ctrl) Keyboard.press(KEY_LEFT_CTRL);
       if (shift) Keyboard.press(KEY_LEFT_SHIFT);
       Keyboard.write(keyCode);
-      if (ctrl && ! (modifiers & (1 << (KEY_LEFT_CTRL - KEY_MODS)))) Keyboard.release(KEY_LEFT_CTRL);
-      if (shift && ! (modifiers & (1 << (KEY_LEFT_SHIFT - KEY_MODS)))) Keyboard.release(KEY_LEFT_SHIFT);
+      if (ctrl && ! (modifiers & CTRL)) Keyboard.release(KEY_LEFT_CTRL);
+      if (shift && ! (modifiers & SHIFT)) Keyboard.release(KEY_LEFT_SHIFT);
+    } else if (modLay == KEY_CMOD2) {
+      bool alt = false;
+      bool ctrl = false;
+      if (keyCode == KEY_RETURN || keyCode == KEY_BACKSPACE || keyCode == KEY_DELETE) {
+        alt = true;
+      }
+      else if (keyCode == KEY_UP_ARROW) {
+        ctrl = true;
+        keyCode = KEY_PAGE_UP;
+      }
+      else if (keyCode == KEY_DOWN_ARROW) {
+        ctrl = true;
+        keyCode = KEY_PAGE_DOWN;
+      }
+      else if (keyCode == KEY_LEFT_ARROW || keyCode == KEY_RIGHT_ARROW) {
+        // TODO: Alt+Tab
+      }
+      else if (keyCode == KEY_HOME) {
+        ctrl = true;
+        alt = true;
+        keyCode = KEY_LEFT_ARROW;
+      }
+      else if (keyCode == KEY_END) {
+        ctrl = true;
+        alt = true;
+        keyCode = KEY_RIGHT_ARROW;
+      }
+      if (ctrl) Keyboard.press(KEY_LEFT_CTRL);
+      if (alt) Keyboard.press(KEY_LEFT_ALT);
+      Keyboard.write(keyCode);
+      if (alt && ! (modifiers & LALT)) Keyboard.release(KEY_LEFT_ALT);
+      if (ctrl && ! (modifiers & CTRL)) Keyboard.release(KEY_LEFT_CTRL);
     } else {
-      if (keyCode == KEY_HOME) {
+      if ((keyCode == KEY_HOME || keyCode == KEY_END) && (modifiers & CTRL)) {
+        Keyboard.release(KEY_LEFT_CTRL);
+        Keyboard.write(keyCode);
         Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.write(KEY_LEFT_ARROW);
-        if (! (modifiers & (1 << (KEY_LEFT_CTRL - KEY_MODS)))) Keyboard.release(KEY_LEFT_CTRL);
-      } else if (keyCode == KEY_END) {
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.write(KEY_RIGHT_ARROW);
-        if (! (modifiers & (1 << (KEY_LEFT_CTRL - KEY_MODS)))) Keyboard.release(KEY_LEFT_CTRL);
+        /*if (keyCode == KEY_HOME) {
+          Keyboard.press(KEY_LEFT_CTRL);
+          Keyboard.write(KEY_LEFT_ARROW);
+          if (! (modifiers & CTRL)) Keyboard.release(KEY_LEFT_CTRL);
+          } else if (keyCode == KEY_END) {
+          Keyboard.press(KEY_LEFT_CTRL);
+          Keyboard.write(KEY_RIGHT_ARROW);
+          if (! (modifiers & CTRL)) Keyboard.release(KEY_LEFT_CTRL);*/
       } else {
         Keyboard.press(keyCode);
       }
@@ -250,16 +310,16 @@ void press(byte keyNum) {
 
 void release(byte keyNum) {
   byte layer1 = layer;
-  if (modLay == KEY_SYM || modLay == KEY_CMOD || modLay == KEY_TYPO) {
+  if (modLay >= KEY_SYM) {
     layer1 = LAYOUTS;
   } else if (modLay) {
     layer1 = modLay - KEY_NAV + LAYERS - LAYOUTS;
   }
   byte keyCode = pgm_read_byte(&layers[layer1][keyNum - 1]);
   if (keyCode >= KEY_MODS && keyCode <= KEY_RIGHT_GUI) {
-    if (keyCode == KEY_LEFT_ALT && (modifiers & (1 << (KEY_LEFT_GUI - KEY_MODS)))) {
+    if (keyCode == KEY_LEFT_ALT && (modifiers & WIN)) {
       keyCode = KEY_LEFT_GUI;
-    } else if (keyCode == KEY_RIGHT_ALT && (modifiers & (1 << (KEY_LEFT_GUI - KEY_MODS)))) {
+    } else if (keyCode == KEY_RIGHT_ALT && (modifiers & WIN)) {
       keyCode = KEY_LEFT_GUI;
     }
     modifiers &= ~ (1 << (keyCode - KEY_MODS));
@@ -274,7 +334,7 @@ void release(byte keyNum) {
     modLay = KEY_NAV;
   } else if (keyCode == KEY_TYPO) {
     modLay = KEY_NAV;
-  } else if (keyCode == KEY_CMOD) {
+  } else if (keyCode == KEY_CMOD || keyCode == KEY_CMOD2) {
     modLay = KEY_NAV;
   } else if (keyCode >= KEY_LAY1) {
     Keyboard.releaseAll();
@@ -290,9 +350,11 @@ void release(byte keyNum) {
       Keyboard.write(KEY_LEFT_ARROW);
       Keyboard.releaseAll();
       modifiers = 0;
-    } else if (modLast == KEY_LEFT_SHIFT && keyCode == KEY_LEFT_SHIFT && modLay == KEY_NAV) {
+      //} else if (modLast == KEY_LEFT_SHIFT && keyCode == KEY_LEFT_SHIFT && modLay == KEY_NAV) {
+    } else if (modLast == KEY_CMOD && keyCode == KEY_CMOD) {
       change_layout(1);
-    } else if (modLast == KEY_LEFT_CTRL && keyCode == KEY_LEFT_CTRL && modLay == KEY_NAV) {
+      //} else if (modLast == KEY_LEFT_CTRL && keyCode == KEY_LEFT_CTRL && modLay == KEY_NAV) {
+    } else if (modLast == KEY_LEFT_GUI && keyCode == KEY_LEFT_GUI) {
       change_layout(0);
     } else if (modLast == KEY_LEFT_CTRL && keyCode == KEY_LEFT_CTRL) {
       Keyboard.releaseAll();
@@ -300,33 +362,19 @@ void release(byte keyNum) {
       modifiers = 0;
     } else if (modLast == KEY_TYPO && keyCode == KEY_TYPO) {
       Keyboard.write(KEY_PAGE_UP);
-    } else if (modLast == KEY_CMOD && keyCode == KEY_CMOD) {
+    } else if (modLast == KEY_SYM && keyCode == KEY_SYM) {
       Keyboard.write(KEY_PAGE_DOWN);
     } else if (modLast == KEY_LEFT_ALT && keyCode == KEY_LEFT_ALT) {
-      Keyboard.write('-');
-      if (modLay == KEY_NAV) Keyboard.write(' ');
-    } else if (modLast == KEY_RIGHT_ALT && keyCode == KEY_RIGHT_ALT) {
       Keyboard.write(',');
       if (modLay == KEY_NAV) Keyboard.write(' ');
-    /*} else if () {
-      Keyboard.releaseAll();
-      Keyboard.press(KEY_LEFT_CTRL);
-      Keyboard.write(KEY_BACKSPACE);
-      Keyboard.releaseAll();
-      modifiers = 0;*/
+    } else if (modLast == KEY_RIGHT_ALT && keyCode == KEY_RIGHT_ALT) {
+      Keyboard.write('-');
+      if (modLay == KEY_NAV) Keyboard.write(' ');
     } else if (modLast == KEY_LEFT_SHIFT && keyCode == KEY_LEFT_SHIFT) {
       Keyboard.write(' ');
     }
   }
   modLast = 0;
-}
-
-void modRecover() {
-  for (byte i=0; i<8; i++) {
-    if (modifiers & (1 << i)) {
-      Keyboard.press(KEY_MODS + i);
-    }
-  }
 }
 
 void setup() {
