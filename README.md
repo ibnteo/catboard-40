@@ -4,9 +4,9 @@ CatBoard-40 vs [CatBoard-2](http://catboard.klava.org/):
 
 ![](Layout/catboard-40vs60.png)
 
-QWERTY Layout:
+Layouts:
 
-[![](Layout/catboard-40qwerty.png)](http://www.keyboard-layout-editor.com/#/gists/4bbac4037e8921533f8884f2e67cb253)
+[![](Layout/catboard-4-layers.png)](http://www.keyboard-layout-editor.com/#/gists/85d7c7eebbaff2e75aea38a61f22e7d8)
 
 Firmware: [Arduino](Arduino/)
 

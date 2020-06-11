@@ -219,7 +219,9 @@ void press(byte keyNum) {
     Keyboard.write(KEY_TAB);
   } else if (keyCode == KEY_ESC2) {
     Keyboard.write(KEY_ESC);
-    Keyboard.write(KEY_ESC);
+    if (! modifiers && modLay != KEY_ATAB) {
+      Keyboard.write(KEY_ESC);
+    }
   } else if (keyCode >= KEY_CAPS_LOCK && keyCode <= KEY_F12) {
     Keyboard.write(keyCode);
     modLay = KEY_NAV;
