@@ -1,7 +1,7 @@
 /*
    Keyboard K4 (CatBoard-4)
-   Version: 0.2
-   Date: 2020-06-13
+   Version: 0.3
+   Date: 2020-06-14
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
    Controller: ProMicro (Arduino Leonardo)
@@ -90,6 +90,7 @@ Keypad keypad[KEYPADS] = {
 #define WINDOWS 1
 #define MACOS   2
 #define OS LINUX
+#define LINUX_COMPOSE false
 #if OS == MACOS
 #define KEY_LEFT_CTRL 0x83
 #define KEY_LEFT_WIN  0x80
@@ -151,9 +152,9 @@ const char layers[LAYOUTS + 7][KEYS] PROGMEM = {
     ' ', KEY_QUASI, KEY_RIGHT_ALT
   },
   { // Num
-    KEY_ESC, KEYPAD_SLASH, KEYPAD_1, KEYPAD_2, KEYPAD_3, KEYPAD_MINUS,
-    KEY_TAB, KEYPAD_ASTERIX, KEYPAD_4, KEYPAD_5, KEYPAD_6, KEYPAD_PLUS,
-    KEYPAD_PERIOD, KEYPAD_7, KEYPAD_8, KEYPAD_9, KEYPAD_0,
+    KEY_CAPS_LOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5,
+    KEY_SCROLL_LOCK, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10,
+    KEY_LAY2, KEY_PAUSE, KEY_PRINTSCREEN, KEY_F11, KEY_F12,
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT,
     KEY_NUM_LOCK, KEYPAD_7, KEYPAD_8, KEYPAD_9, KEYPAD_MINUS, KEYPAD_SLASH,
     KEYPAD_ENTER, KEYPAD_4, KEYPAD_5, KEYPAD_6, KEYPAD_PLUS, KEYPAD_ASTERIX,
@@ -171,9 +172,9 @@ const char layers[LAYOUTS + 7][KEYS] PROGMEM = {
     ' ', KEY_QUASI, KEY_RIGHT_ALT
   },
   { // Func
-    KEY_CAPS_LOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5,
-    KEY_SCROLL_LOCK, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10,
-    KEY_LAY2, KEY_PAUSE, KEY_PRINTSCREEN, KEY_F11, KEY_F12,
+    KEY_ESC2, '1', '2', '3', '4', '5',
+    KEY_TAB, '6', '7', '8', '9', '0',
+    KEY_LAY2, '\\', '+', '-', '`',
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT,
     KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO,
     KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO,
@@ -208,17 +209,6 @@ const char layers[LAYOUTS + 7][KEYS] PROGMEM = {
 #define LAY_TYPO 7
 #define LAY_UMLT 8
 
-const char syms[KEYS][LAYOUTS] PROGMEM = {
-  {'`', 0}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'},
-  {0, 0}, {'^', 0}, {'&', 0}, {'*', '*'}, {'(', '('}, {')', ')'},
-  {'.', '/'}, {'/', '|'}, {'=', '='}, {'_', '_'}, {'|', 0},
-  {0, 0}, {0, 0}, {0, 0},
-  {'~', 0}, {0, '#'}, {'{', 0}, {'}', 0}, {';', '$'}, {'\'', 0},
-  {0, 0}, {0, 0}, {'[', 0}, {']', 0}, {':', '^'}, {'"', '@'},
-  {0, 0}, {'?', '&'}, {'<', 0}, {'>', 0}, {',', '?'},
-  {0, 0}, {0, 0}, {0, 0}
-};//`!@#$%^&*().  
-
 #define BUF 40
 byte ibuf = 0;
 char buf[BUF] = {};
@@ -230,21 +220,107 @@ byte mods = 0;
 void changeLayout(byte l) {
   if (layout != l) {
     Keyboard.releaseAll();
-#if OS == MACOS
-    Keyboard.press(KEY_LEFT_WIN);
-    Keyboard.press(' ');
-#elif OS == WINDOWS
-    Keyboard.press(KEY_LEFT_SHIFT);
-    Keyboard.press(KEY_LEFT_CTRL);
-#else
-    Keyboard.press(KEY_LEFT_SHIFT);
-    Keyboard.press(KEY_LEFT_ALT);
-#endif
+    if (OS == MACOS) {
+      Keyboard.press(KEY_LEFT_WIN);
+      Keyboard.press(' ');
+    } else if (OS == WINDOWS) {
+      Keyboard.press(KEY_LEFT_SHIFT);
+      Keyboard.press(KEY_LEFT_CTRL);
+    } else {
+      Keyboard.press(KEY_LEFT_SHIFT);
+      Keyboard.press(KEY_LEFT_ALT);
+    }
     Keyboard.releaseAll();
   }
   layout = l;
   digitalWrite(LED_LAYER, layout == 0 ? HIGH : LOW); // LOW = light
 }
+
+void recover() {
+  for (byte i = 0; i < 8; i++) {
+    if (mods & (1 << i)) {
+      Keyboard.press(KEY_LEFT_CTRL + i);
+    }
+  }
+}
+
+const char syms[KEYS][LAYOUTS] PROGMEM = {
+  {'`', 0}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'},
+  {0, 0}, {'^', 0}, {'&', 0}, {'*', '*'}, {'(', '('}, {')', ')'},
+  {'.', '/'}, {'/', '|'}, {'=', '='}, {'_', '_'}, {'|', 0},
+  {0, 0}, {0, 0}, {0, 0},
+  {'~', 0}, {0, '#'}, {'{', 0}, {'}', 0}, {';', '$'}, {'\'', 0},
+  {0, 0}, {0, 0}, {'[', 0}, {']', 0}, {':', '^'}, {'"', '@'},
+  {0, 0}, {'?', '&'}, {'<', 0}, {'>', 0}, {',', '?'},
+  {0, 0}, {0, 0}, {0, 0}
+};
+
+void sym(byte k) {
+  byte l = layout;
+  byte keyCodeS = pgm_read_byte(&syms[k - 1][layout]);
+  if (keyCodeS) {
+    Keyboard.write(keyCodeS);
+  } else {
+    keyCodeS = pgm_read_byte(&syms[k - 1][1 - layout]);
+    if (keyCodeS) {
+      changeLayout(1 - layout);
+      Keyboard.write(keyCodeS);
+    }
+  }
+  changeLayout(l);
+}
+
+String macros(byte k) {
+  if (k == 21 && layout == 0) return "tion";
+  return "";
+}
+
+String umlt(byte k) {
+  return "";
+}
+
+String typos(byte k) {
+  if (k == 35 && OS == LINUX) return LINUX_COMPOSE ? "<<" : "00ab";
+  else if (k == 35 && OS == WINDOWS) return "0171";
+  else if (k == 36 && OS == LINUX) return LINUX_COMPOSE ? ">>" : "00bb";
+  else if (k == 36 && OS == WINDOWS) return "0187";
+  else if (k == 17 && OS == LINUX) return LINUX_COMPOSE ? "---" : "2014";
+  //else if (k == 17 && OS == WINDOWS) return "0187";
+  return "";
+}
+
+void unicode(String str, bool compose) {
+  if (str != "") {
+    byte l = layout;
+    Keyboard.releaseAll();
+    if (OS == LINUX && compose && LINUX_COMPOSE) { // Compose (Right Win)
+      changeLayout(0);
+      Keyboard.press(KEY_RIGHT_GUI);
+      Keyboard.print(str);
+      Keyboard.releaseAll();
+      changeLayout(l);
+    } else if (OS == LINUX) { // Ctrl+U <code> <Enter>
+      changeLayout(0);
+      Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.write('U');
+      Keyboard.releaseAll();
+      Keyboard.print(str);
+      Keyboard.write(KEY_RETURN);
+      changeLayout(l);
+    } else if (OS == WINDOWS) { // Alt+<code-NumBlock>
+      Keyboard.press(KEY_RIGHT_ALT);
+      for (byte i = 0; i < str.length(); i++) {
+        byte s = str.charAt(i) - '1' + KEYPAD_1;
+        if (s < KEYPAD_1 || s > KEYPAD_9) s = KEYPAD_0;
+        Keyboard.write(s);
+      }
+      Keyboard.releaseAll();
+    }
+    // TODO: Macos
+    recover();
+  }
+}
+
 
 #define KRELEASE 0
 #define KPRESS 1
@@ -258,6 +334,10 @@ void press(char keyNum) {
   if (layer) l = LAYOUTS + 1;
   byte keyCode = pgm_read_byte(&layers[l][keyNum - 1]);
   if (keyCode >= KEY_LEFT_CTRL && keyCode <= KEY_RIGHT_WIN) {
+    if (ibuf != 0) {
+      keyMode = KHOLD;
+      release(keyNum);
+    }
     if (keyCode == KEY_LEFT_ALT && (mods & RALT)) {
       Keyboard.release(KEY_RIGHT_ALT);
       mods &= ~ RALT;
@@ -277,7 +357,7 @@ void press(char keyNum) {
     multiple = 10;
   } else if (keyCode == '0') {
     multiple = 20;
-  } else if (keyCode >= '0' && keyCode <= '9') {
+  } else if (keyCode >= '1' && keyCode <= '9') {
     multiple = keyCode - '1' + 1;
   }
   if (ibuf < BUF && keyCode < KEY_QUASI && ! (keyCode >= KEY_LEFT_CTRL && keyCode <= KEY_RIGHT_WIN)) {
@@ -308,9 +388,13 @@ void release(char keyNum) {
     multiple = 0;
   }
   l = layout + 1;
-  Serial.println(layer, DEC);
   if (keyCode >= KEY_LEFT_CTRL && keyCode <= KEY_RIGHT_WIN) {
-    if (mods & MODS) l = 0;
+    if (mods & MODS){
+      l = 0;
+    } else if (layer) {
+      l = layer - KEY_QUASI + LAYOUTS + 1;
+      multiple = 0;
+    }
     if (keyMode == KPRESS && ibuf == 0) {
       if (keyCode == KEY_LEFT_SHIFT) {
         Keyboard.release(KEY_LEFT_SHIFT);
@@ -331,7 +415,6 @@ void release(char keyNum) {
     l = LAY_FUNC;
     multiple = 0;
   } else if (layer == 0) {
-    Serial.println(keyCode, DEC);
     if (mods & LALT) {
       if (keyCode != KEY_TAB) Keyboard.release(KEY_LEFT_ALT);
       l = LAY_TYPO;
@@ -349,33 +432,26 @@ void release(char keyNum) {
     for (byte i = 0; i < ibuf; i++) {
       byte keyCodeL = pgm_read_byte(&layers[l][buf[i] - 1]);
       if (keyCodeL >= KEY_LEFT_CTRL && keyCodeL <= KEY_RIGHT_WIN) {
-      } else if (keyCodeL == KEY_NUM ) {
-        Keyboard.write(' ');
+      } else if (keyCodeL == KEY_NUM) {
+        if (ibuf == 1) Keyboard.write(' ');
       } else if (keyCodeL >= KEY_QUASI) {
       } else if (keyCodeL == KEY_SYM) {
-        bool cl = false;
-        byte keyCodeS = pgm_read_byte(&syms[buf[i] - 1][layout]);
-        if (keyCodeS) {
-          Keyboard.write(keyCodeS);
-        } else {
-          keyCodeS = pgm_read_byte(&syms[buf[i] - 1][1 - layout]);
-          if (keyCodeS) {
-            changeLayout(1 - layout);
-            cl = true;
-            Keyboard.write(keyCodeS);
-          }
-        }
-        if (cl) changeLayout(1 - layout);
+        sym(buf[i]);
       } else if (keyCodeL == KEY_MACRO) {
-        // TODO
+        String str = macros(buf[i]);
+        if (str != "") Keyboard.print(str);
       } else if (keyCodeL == KEY_TYPO) {
-        // TODO
+        unicode(typos(buf[i]), true);
       } else if (keyCodeL == KEY_UMLT) {
-        // TODO
+        unicode(umlt(buf[i]), false);
       } else if (keyCodeL == KEY_LAY1) {
-        if (keyMode == KPRESS) changeLayout(0);
+        if (keyMode == KPRESS) {
+          changeLayout(0);
+        }
       } else if (keyCodeL == KEY_LAY2) {
-        if (keyMode == KPRESS) changeLayout(1);
+        if (keyMode == KPRESS) {
+          changeLayout(1);
+        }
       } else if (keyCodeL == '+' && (mods & SHIFT)) {
         Keyboard.release(KEY_LEFT_SHIFT);
         Keyboard.write('=');
@@ -403,10 +479,9 @@ void release(char keyNum) {
     Keyboard.release(keyCode);
     mods &= ~ (1 << (keyCode - KEY_LEFT_CTRL));
   }
-  for (byte i = 0; i < 8; i++) {
-    if (mods & (1 << i)) {
-      Keyboard.press(KEY_LEFT_CTRL + i);
-    }
+  recover();
+  if (keyCode == KEY_QUASI) {
+    layer = 0;
   }
   keyMode = KRELEASE;
 }
