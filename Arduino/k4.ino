@@ -1,7 +1,7 @@
 /*
    Keyboard K4 (CatBoard-4)
-   Version: 0.3
-   Date: 2020-06-14
+   Version: 0.31
+   Date: 2020-06-16
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
    Controller: ProMicro (Arduino Leonardo)
@@ -327,6 +327,7 @@ void unicode(String str, bool compose) {
 #define KHOLD 2
 byte keyMode = KRELEASE;
 byte multiple = 0;
+byte multmode = 0;
 
 void press(char keyNum) {
   keyMode = KPRESS;
@@ -357,6 +358,10 @@ void press(char keyNum) {
     multiple = 10;
   } else if (keyCode == '0') {
     multiple = 20;
+  } else if (keyCode == '8') {
+    multmode = KEY_LEFT_WIN;
+  } else if (keyCode == '9') {
+    multmode = KEY_LEFT_CTRL;
   } else if (keyCode >= '1' && keyCode <= '9') {
     multiple = keyCode - '1' + 1;
   }
@@ -379,13 +384,17 @@ void release(char keyNum) {
   }
   if (keyCode == KEY_QUASI) {
     layer = ibuf ? KEY_FUNC : 0;
-    multiple = 0;
+    multiple = 0; multmode = 0;
   } else if (layer == KEY_NUM && keyCode == ' ') {
     layer = 0;
   } else if (keyCode > KEY_QUASI) {
     layer = KEY_QUASI;
   } else if (keyCode >= '0' && keyCode <= '9') {
-    multiple = 0;
+    if (keyCode == '9' || keyCode == '8') {
+      multmode = 0;
+    } else {
+      multiple = 0;
+    }
   }
   l = layout + 1;
   if (keyCode >= KEY_LEFT_CTRL && keyCode <= KEY_RIGHT_WIN) {
@@ -393,7 +402,7 @@ void release(char keyNum) {
       l = 0;
     } else if (layer) {
       l = layer - KEY_QUASI + LAYOUTS + 1;
-      multiple = 0;
+      multiple = 0; multmode = 0;
     }
     if (keyMode == KPRESS && ibuf == 0) {
       if (keyCode == KEY_LEFT_SHIFT) {
@@ -413,7 +422,7 @@ void release(char keyNum) {
     }
   } else if (keyCode == KEY_QUASI && layer == KEY_QUASI) {
     l = LAY_FUNC;
-    multiple = 0;
+    multiple = 0; multmode = 0;
   } else if (layer == 0) {
     if (mods & LALT) {
       if (keyCode != KEY_TAB) Keyboard.release(KEY_LEFT_ALT);
@@ -452,17 +461,36 @@ void release(char keyNum) {
         if (keyMode == KPRESS) {
           changeLayout(1);
         }
+      } else if (keyCodeL == '`' && ! (mods & MODS)) {
+        if (mods & SHIFT) {
+          Keyboard.release(KEY_LEFT_SHIFT);
+          Keyboard.write(',');
+          Keyboard.press(KEY_LEFT_SHIFT);
+        } else {
+          Keyboard.write('.');
+        }
+      } else if (keyCodeL == '\\' && ! (mods & MODS)) {
+        if (mods & SHIFT) {
+          Keyboard.release(KEY_LEFT_SHIFT);
+          Keyboard.write(keyCodeL);
+          Keyboard.press(KEY_LEFT_SHIFT);
+        } else {
+          Keyboard.write('/');
+        }
+      } else if (keyCodeL == '+' && (mods & MODS)) {
+        Keyboard.write('=');
       } else if (keyCodeL == '+' && (mods & SHIFT)) {
         Keyboard.release(KEY_LEFT_SHIFT);
         Keyboard.write('=');
         Keyboard.press(KEY_LEFT_SHIFT);
-      } else if (keyCodeL == '+' && (mods & MODS)) {
-        Keyboard.write('=');
-      } else if (multiple && keyCodeL >= '0' && keyCodeL <= '9') {
-      } else if (multiple && keyCodeL >= KEY_PAGE_UP && keyCodeL <= KEY_UP_ARROW) {
-        for (byte m = 0; m < multiple; m++) {
+      } else if ((multiple || multmode) && keyCodeL >= '0' && keyCodeL <= '9') {
+      } else if ((multiple || multmode) && keyCodeL >= KEY_PAGE_UP && keyCodeL <= KEY_UP_ARROW) {
+        if (multmode) Keyboard.press(multmode);
+        for (byte m = 0; m < (multiple ? multiple : 1); m++) {
           Keyboard.write(keyCodeL);
         }
+        if (multmode == KEY_LEFT_CTRL && ! (mods & CTRL)) Keyboard.release(multmode);
+        if (multmode == KEY_LEFT_WIN && ! (mods & WIN)) Keyboard.release(multmode);
       } else if (keyCodeL == KEY_ESC2) {
         Keyboard.write(KEY_ESC);
         Keyboard.write(KEY_ESC);
