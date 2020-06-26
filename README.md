@@ -1,4 +1,4 @@
-# Keyboard CatBoard-40
+# Keyboard CatBoard4
 
 [![](Layout/catboard-4-layers.png)](http://www.keyboard-layout-editor.com/#/gists/85d7c7eebbaff2e75aea38a61f22e7d8)
 
@@ -6,7 +6,7 @@ Firmware: [Arduino](Arduino/)
 
 ---
 
-# Клавиатура КошкоКлава-40
+# Клавиатура КошкоКлава4
 
 Сравнение с [КошкоКлавой-2](http://catboard.klava.org/ru.html).
 
