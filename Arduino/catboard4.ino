@@ -1,7 +1,7 @@
 /*
    Keyboard CatBoard-4
-   Version: 0.3
-   Date: 2020-06-30
+   Version: 0.31
+   Date: 2020-07-01
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
    Controller: ProMicro (Arduino Leonardo)
@@ -219,7 +219,7 @@ const char layers[][KEYS] PROGMEM = {
   },
   { // Fn4
     KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO, KEY_MACRO,
-    KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM,
+    KEY_FN4, KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM,
     KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM, KEY_USYM,
     KEY_LEFT_ALT, KEY_LEFT_CTRL, KEY_LEFT_SHIFT,
     KEY_SYM, KEY_SYM, KEY_SYM, KEY_SYM, KEY_SYM, KEY_SYM,
@@ -231,12 +231,12 @@ const char layers[][KEYS] PROGMEM = {
 
 const char syms[KEYS][2] PROGMEM = {
   {'`', 0}, {'!', '!'}, {'@', 0}, {'#', 0}, {'$', 0}, {'%', '%'},
-  {'~', 0}, {'^', 0}, {'&', 0}, {'*', '*'}, {'(', '('}, {')', ')'},
+  {0, 0}, {'^', 0}, {'&', 0}, {'*', '*'}, {'(', '('}, {')', ')'},
   {'|', 0}, {'\\', '\\'}, {'=', '='}, {'_', '_'}, {',', '?'},
   {0, 0}, {0, 0}, {0, 0},
   {0, '#'}, {'?', '&'}, {'{', 0}, {'}', 0}, {';', '$'}, {'\'', 0},
   {0, 0}, {0, 0}, {'[', 0}, {']', 0}, {':', '^'}, {'"', '@'},
-  {0, 0}, {0, 0}, {'<', 0}, {'>', 0}, {0, 0},
+  {0, 0}, {0, 0}, {'<', 0}, {'>', 0}, {'~', 0},
   {' ', ' '}, {0, 0}, {0, 0}
 };
 
@@ -277,8 +277,8 @@ String macros(byte k) {
   return "";
 }
 
-String usyms(byte k) {
-  if (k == 8 && os <= LINUX) return os == LINUX_COMPOSE ? "<<" : "0301";
+String usyms(byte k, bool shift) {
+  if (k == 8 && os <= LINUX) return os == LINUX_COMPOSE ? "" : "0301";
   else if (k == 8 && os == WINDOWS) return "0301";
 
   else if (k == 9 && os <= LINUX) return os == LINUX_COMPOSE ? "<<" : "00ab";
@@ -287,20 +287,29 @@ String usyms(byte k) {
   else if (k == 10 && os <= LINUX) return os == LINUX_COMPOSE ? ">>" : "00bb";
   else if (k == 10 && os == WINDOWS) return "0187";
 
-  else if (k == 11 && os <= LINUX) return os == LINUX_COMPOSE ? ">>" : "00a0";
+  else if (k == 11 && os <= LINUX) return os == LINUX_COMPOSE ? "" : "00a0";
   else if (k == 11 && os == WINDOWS) return "0160";
 
-  else if (k == 12 && os <= LINUX) return os == LINUX_COMPOSE ? ">>" : "00b0";
+  else if (k == 12 && os <= LINUX) return os == LINUX_COMPOSE ? "0" : "00b0";
   else if (k == 12 && os == WINDOWS) return "0176";
+
+  else if (k == 13 && os <= LINUX) return os == LINUX_COMPOSE ? "" : (shift ? "20ac" : "20bd"); // ₽ €
+  else if (k == 13 && os == WINDOWS) return shift ? "8364" : "8381";
+
+  //else if (k == 14 && os <= LINUX) return os == LINUX_COMPOSE ? "" : "";
+  //else if (k == 14 && os == WINDOWS) return "";
 
   else if (k == 15 && os <= LINUX) return os == LINUX_COMPOSE ? "x" : "00d7";
   else if (k == 15 && os == WINDOWS) return "0215";
 
-  else if (k == 16 && os <= LINUX) return os == LINUX_COMPOSE ? "--" : "2013";
-  else if (k == 16 && os == WINDOWS) return "2013";
+  else if (k == 16 && os <= LINUX) return os == LINUX_COMPOSE ? (shift ? "---" : "--") : (shift ? "2014" : "2013");
+  else if (k == 16 && os == WINDOWS) return shift ? "0151" : "0150";
 
-  else if (k == 17 && os <= LINUX) return os == LINUX_COMPOSE ? "---" : "2014";
-  else if (k == 17 && os == WINDOWS) return "2014";
+  //else if (k == 17 && os <= LINUX) return os == LINUX_COMPOSE ? "" : "";
+  //else if (k == 17 && os == WINDOWS) return "";
+
+  //else if (k == 37 && os <= LINUX) return os == LINUX_COMPOSE ? "" : "2026";
+  //else if (k == 37 && os == WINDOWS) return "0133";
 
   return "";
 }
@@ -394,7 +403,7 @@ void press(byte k) {
       }
     }
   
-  } else if ((! is_fn2 || is_mods || is_shift) && mlayer == KEY_FN2 && code >= KEY_CAPS_LOCK && code <= KEY_F12) { // Func once
+  } else if (! is_fn2 && mlayer == KEY_FN2 && code >= KEY_F1 && code <= KEY_F12) { // Func once
     mlayer = KEY_FN;
     Keyboard.press(code);
     
@@ -416,7 +425,7 @@ void press(byte k) {
     symbols(k);
   
   } else if (code == KEY_USYM) { // Unicode Symbol
-    unicode(usyms(k), true);
+    unicode(usyms(k, is_shift), true);
 
   } else if (code == KEY_MACRO) { // Macros
     Keyboard.print(macros(k));
@@ -482,8 +491,8 @@ void release(byte k) {
       }
     }
   
-  } else if (code == KEY_FN2 && mlayer == KEY_FN2) {
-    mlayer = KEY_FN2;
+  //} else if (code == KEY_FN2 && mlayer == KEY_FN2) {
+  //  mlayer = KEY_FN2;
   
   }
   
@@ -494,6 +503,9 @@ void release(byte k) {
       Keyboard.write(code);
     }
   
+  } else if (code == KEY_X4 && mlast == KEY_X4) {
+    Keyboard.write(KEY_ESC);
+
   } else if (code < KEY_MOUSE) {
     Keyboard.release(code);
   
