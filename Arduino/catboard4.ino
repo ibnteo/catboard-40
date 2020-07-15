@@ -1,7 +1,7 @@
 /*
    Keyboard CatBoard-4
-   Version: 0.31
-   Date: 2020-07-01
+   Version: 0.34
+   Date: 2020-07-15
    Author: Vladimir Romanovich <ibnteo@gmail.com>
    License: MIT
    Controller: ProMicro (Arduino Leonardo)
@@ -387,8 +387,22 @@ void press(byte k) {
   } else if (code == KEY_FN4 && is_mods) { // Mods+Sym = Mods+Shift
     code = KEY_LEFT_SHIFT;
     mlast = 0;
+  } else if (code == ' ' && is_ctrl) {
+    code = KEY_RIGHT_SHIFT;
   }
-  
+
+  if (code == KEY_LEFT_ALT || code == KEY_RIGHT_ALT) { // Alt + AltGr = Win
+    for (byte i = 0; i < KEYS; i++) {
+      if (pressed[i] == KEY_LEFT_ALT || pressed[i] == KEY_RIGHT_ALT) {
+        Keyboard.release(pressed[i]);
+        pressed[i] = KEY_LEFT_GUI;
+        Keyboard.press(pressed[i]);
+        code = 0;
+        break;
+      }
+    }
+  }
+
   if (IS_FN(code)) { // Fn
     mlayer = code;
     byte l2 = LAY_FN(mlayer);
@@ -407,16 +421,8 @@ void press(byte k) {
     mlayer = KEY_FN;
     Keyboard.press(code);
     
-  } else if (code == KEY_LEFT_ALT || code == KEY_RIGHT_ALT) { // Alt + AltGr = Win
-    for (byte i = 0; i < KEYS; i++) {
-      if (pressed[i] == KEY_LEFT_ALT || pressed[i] == KEY_RIGHT_ALT) {
-        Keyboard.release(pressed[i]);
-        pressed[i] = KEY_LEFT_GUI;
-        Keyboard.press(pressed[i]);
-        code = 0;
-        break;
-      }
-    }
+  } else if (is_ctrl && ! is_x4 && (code == KEY_LAY2 || code == '\\' || code == '+' || code == '-')) { // Fn+Ctrl+zxcv
+    code = pgm_read_byte(&layers[0][k - 1]);
 
   } else if (IS_LAY(code)) { // Layout
     layout(LAY(code));
@@ -430,22 +436,19 @@ void press(byte k) {
   } else if (code == KEY_MACRO) { // Macros
     Keyboard.print(macros(k));
 
-  } else if (code == KEY_X4) {
-    // Nothing
-
-  } else if (IS_MODS(code)) {
+  } else if (IS_MODS(code) || code == KEY_X4 || code == 0) {
     // Nothing
 
   } else if (mlayer == KEY_FN && is_mods) { // Fn mods
     l = LAY_FN(KEY_FN - 1);
     code = pgm_read_byte(&layers[l][k - 1]);
 
-  } else if (is_mods) { // Layer mods
+  } else if (is_mods && mlayer == 0) { // Layer mods
     code = pgm_read_byte(&layers[0][k - 1]);
   
   }
 
-  if (code < KEY_MOUSE) {
+  if (code && code < KEY_MOUSE) {
     if ((code == KEY_HOME || code == KEY_END) && ! is_x4 && is_ctrl) { // Ctrl+Home/End = Home/End, Ctrl+X4+Home/End = Ctrl+Home/End
       Keyboard.release(KEY_LEFT_CTRL);
       Keyboard.press(code);
@@ -466,7 +469,7 @@ void press(byte k) {
   if (is_shift) {
     Keyboard.press(KEY_LEFT_SHIFT);
   }
-  pressed[k] = code;
+  pressed[k - 1] = code;
   mlast = code;
 }
 
@@ -475,8 +478,8 @@ void release(byte k) {
   if (IS_FN(mlayer)) {
     l = LAY_FN(mlayer);
   }
-  byte code = pressed[k];
-  pressed[k] = 0;
+  byte code = pressed[k - 1];
+  pressed[k - 1] = 0;
   if (IS_FN(code) && mlast != KEY_FN2) { // Fn
     mlayer = 0;
     for (byte i = 0; i < KEYS; i++) {
@@ -491,11 +494,8 @@ void release(byte k) {
       }
     }
   
-  //} else if (code == KEY_FN2 && mlayer == KEY_FN2) {
-  //  mlayer = KEY_FN2;
-  
   }
-  
+
   if (code == mlast && (IS_MODS(code) || IS_FN(code)) && code != KEY_FN2) { // Mods click
     Keyboard.release(code);
     code = pgm_read_byte(&layers[0][k - 1]);
@@ -506,10 +506,11 @@ void release(byte k) {
   } else if (code == KEY_X4 && mlast == KEY_X4) {
     Keyboard.write(KEY_ESC);
 
-  } else if (code < KEY_MOUSE) {
+  } else if (code && code < KEY_MOUSE) {
     Keyboard.release(code);
   
   }
+
 }
 
 void setup() {
